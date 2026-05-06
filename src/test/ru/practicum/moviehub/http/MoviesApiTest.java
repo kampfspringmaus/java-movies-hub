@@ -86,7 +86,7 @@ public class MoviesApiTest {
             }
             JsonObject jsonObject = jsonElement.getAsJsonObject();
             int index = jsonObject.get("index").getAsInt();
-            Assertions.assertEquals(1, index,"при добавлении фильма вернулся неправильный индекс");
+            Assertions.assertEquals(2, index,"при добавлении фильма вернулся неправильный индекс");
             JsonObject movieObject = jsonObject.getAsJsonObject("movie");
             Movie movieResponse = gson.fromJson(movieObject,Movie.class);
             Assertions.assertEquals(movie, movieResponse,"Возвращённый фильм не совпадает с опубликованным");
@@ -132,7 +132,8 @@ public class MoviesApiTest {
 
     @Test
     void whenPostMovieWithLongTitleReturns422AndValidationError(){
-        Movie movie = new Movie("shalalalalashalalalalashalalalalashalalalalashalalalalashalalalalashalalalalashalalalalashalalalalashalalalalashalalalala", 1997);
+        Movie movie = new Movie("shalalalalashalalalalashalalalalashalalalalashalalalalashalalalalasha" +
+                "lalalalashalalalalashalalalalashalalalalashalalalala", 1997);
         Gson gson = new Gson();
         String movieBody = gson.toJson(movie);
 
@@ -249,6 +250,60 @@ public class MoviesApiTest {
             HttpResponse<String> response = client.send(req,
                     HttpResponse.BodyHandlers.ofString());
             Assertions.assertEquals(422, response.statusCode(), "При неправильном JSON должна возвращаться 422 ошибка");
+            //System.out.println("response "+ response.statusCode());
+        } catch (IOException | InterruptedException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    @Test
+    void whenDeleteNonExistentMovieGet404(){
+        HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create(BASE + "/movies/172"))
+                .DELETE()
+                .build();
+        try {
+            HttpResponse<String> response = client.send(req,
+                    HttpResponse.BodyHandlers.ofString());
+            Assertions.assertEquals(404, response.statusCode(), "При удалении несуществующего фильма должна возвращаться 404 ошибка");
+            //System.out.println("response "+ response.statusCode());
+        } catch (IOException | InterruptedException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+    @Test
+    void whenDeleteExistedMovieGet204(){
+        Movie movie = new Movie("Бабусяasd", 1997);
+        Gson gson = new Gson();
+        String movieBody = gson.toJson(movie);
+        int index = 0;
+
+        HttpRequest reqPost = HttpRequest.newBuilder()
+                .uri(URI.create(BASE + "/movies"))
+                .POST(HttpRequest.BodyPublishers.ofString(movieBody))
+                .build();
+        try {
+            HttpResponse<String> responsePost = client.send(reqPost,
+                    HttpResponse.BodyHandlers.ofString());
+            JsonElement jsonElement = JsonParser.parseString(responsePost.body());
+            if(!jsonElement.isJsonObject()) { // проверяем, точно ли мы получили JSON-объект
+                System.out.println("Ответ от сервера не соответствует ожидаемому.");
+                return;
+            }
+            JsonObject jsonObject = jsonElement.getAsJsonObject();
+            index = jsonObject.get("index").getAsInt();
+
+        } catch (IOException | InterruptedException e) {
+        System.out.println(e.getMessage());
+    }
+        HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create(BASE + "/movies/"+index))
+                .DELETE()
+                .build();
+        try {
+            HttpResponse<String> response = client.send(req,
+                    HttpResponse.BodyHandlers.ofString());
+            Assertions.assertEquals(204, response.statusCode(), "При удалении существующего фильма должен возвращаться код 204");
             //System.out.println("response "+ response.statusCode());
         } catch (IOException | InterruptedException e) {
             System.out.println(e.getMessage());

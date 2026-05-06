@@ -15,6 +15,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 public class MoviesHandler extends BaseHttpHandler { // Расширьте базовый класс BaseHttpHandler
 
@@ -22,11 +23,14 @@ public class MoviesHandler extends BaseHttpHandler { // Расширьте ба�
     public MoviesHandler(MoviesStore store) {
         super(store);
 
+
     }
     @Override
     public void handle(HttpExchange ex) throws IOException {
         String method = ex.getRequestMethod();
         ArrayList<String> potentialErrors = new ArrayList<>();
+        Gson gson = new Gson();
+
 
         if (method.equalsIgnoreCase("GET")) {
 
@@ -34,19 +38,16 @@ public class MoviesHandler extends BaseHttpHandler { // Расширьте ба�
 
         }
         //НАЧАЛО ПОСТА
-
-//getRequestHeaders("Content-Type");
-        if (method.equalsIgnoreCase("POST")) {
-            Gson gson = new Gson();
+        else if (method.equalsIgnoreCase("POST")) {
             InputStream inputStream = ex.getRequestBody();
             String requestBody = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
             //String jsonString = ex.getRequestBody();
             try {
             Movie movie = gson.fromJson(requestBody, Movie.class);
-//данные для проверки content-type
+            //данные для проверки content-type
             Headers headers = ex.getRequestHeaders();
             String contentType = headers.getFirst("Content-Type");
-// обработка ошибок добавления фильма
+            // обработка ошибок добавления фильма
             if (movie.getTitle().isEmpty()) {
                 potentialErrors.add("название не должно быть пустым");
             }
@@ -77,13 +78,21 @@ public class MoviesHandler extends BaseHttpHandler { // Расширьте ба�
                 String json = gson.toJson(combined);
                 sendJson(ex, 201, json);
             }
-
-
-            // sendJson(ex,201, "{}");
         } catch (JsonParseException e ) {
                 sendJson(ex, 422, "");
 
             }
+        } else if (method.equalsIgnoreCase("DELETE")) {
+            String requestPath = ex.getRequestURI().getPath();
+            int id = Integer.parseInt(requestPath.substring(requestPath.lastIndexOf('/')+1));
+            System.out.println("просят удалить фильм " + id);
+            //System.out.println("вот такой список фильмов: \n"+store.keySet());
+            Optional<Movie> movie = store.deleteMovie(id);
+if (movie.isPresent()) {
+    sendNoContent(ex);
+} else {
+    sendJson(ex,404,"");
+}
         }
     }
 }

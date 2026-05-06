@@ -16,17 +16,25 @@ public class MoviesStore {
     }
 
     public int addMovie(String title, int year) {
-        //Movie movie = ;
-        index++;
-        store.put(index, new Movie(title,year));
-        // int resultIndex = index;
-        //System.out.println("resultIndex = " + resultIndex);
-        System.out.println("index = "+ index);
-        return index;
+        Movie movie = new Movie(title,year);
+        if (store.containsValue(movie)) {
+            return -1;
+        } else {
+            index++;
+            store.put(index, movie);
+            // int resultIndex = index;
+            //System.out.println("resultIndex = " + resultIndex);
+            System.out.println("index = "+ index);
+            System.out.println("вот такой список фильмов: \n"+store.keySet());
+            return index;
+        }
+
+
     }
 
-    Optional<Movie> deleteMovie(int index) {
-        return Optional.of(store.remove(index));
+    public Optional<Movie> deleteMovie(int index) {
+        System.out.println("вот такой список фильмов: \n"+store.keySet());
+        return Optional.ofNullable(store.remove(index));
     }
 
 }
