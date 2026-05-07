@@ -15,14 +15,12 @@ public class MoviesStore {
     }
 
     public int addMovie(String title, int year) {
-        Movie movie = new Movie(title,year);
+        Movie movie = new Movie(title, year);
         if (store.containsValue(movie)) {
             return -1;
         } else {
             index++;
             store.put(index, movie);
-            // int resultIndex = index;
-            //System.out.println("resultIndex = " + resultIndex);
             return index;
         }
 
@@ -41,13 +39,17 @@ public class MoviesStore {
         return store.get(index);
     }
 
-    public List<String> getMovieByYear (int year) {
+    public List<String> getMovieByYear(int year) {
         List<String> movies = new ArrayList<>();
         movies = store.values().stream()
                 .filter(movie -> movie.getYear() == year)
                 .map(movie -> movie.getTitle())
                 .collect(Collectors.toList());
         return movies;
+    }
+
+    public List<Movie> getAllMovies() {
+        return new ArrayList<>(store.values());
     }
 
 }

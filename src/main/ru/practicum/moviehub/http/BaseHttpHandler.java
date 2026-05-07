@@ -30,7 +30,7 @@ public abstract class BaseHttpHandler implements HttpHandler {
     protected void sendNoContent(HttpExchange ex) throws java.io.IOException {
         // !!! Реализуйте общий для всех хендлеров метод
         // для отправки ответа без тела и кодом 204
-        ex.getResponseHeaders().set("Content-Type",CT_JSON);
+        ex.getResponseHeaders().set("Content-Type", CT_JSON);
         byte[] bytes = "[]".getBytes(StandardCharsets.UTF_8);
         ex.sendResponseHeaders(204, -1);
         try (OutputStream os = ex.getResponseBody()) {

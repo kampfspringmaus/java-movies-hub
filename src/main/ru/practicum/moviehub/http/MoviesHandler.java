@@ -14,7 +14,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.*;
 
-public class MoviesHandler extends BaseHttpHandler { // Расширьте базовый класс BaseHttpHandler
+public class MoviesHandler extends BaseHttpHandler {
 
 
     public MoviesHandler(MoviesStore store) {
@@ -34,14 +34,17 @@ public class MoviesHandler extends BaseHttpHandler { // Расширьте ба�
             String path = ex.getRequestURI().getPath();
             String query = ex.getRequestURI().getQuery();
             if (path.equals("/movies") && query == null) {
-                sendJson(ex, 200, "[]");
-                //дописать логику
-                System.out.println("мы в логике /movies");
-            //Эндпоинт GET /movies?year=YYYY
+                List<Movie> result = store.getAllMovies();
+                if (result.size() == 0) {
+                    sendJson(ex, 200, "[]");
+                } else {
+                    String json = gson.toJson(result);
+                    sendJson(ex, 200, json);
+                }
+                //Эндпоинт GET /movies?year=YYYY
             } else if (path.equals("/movies") && query.matches("year=.*")) {
-                System.out.println("мы в логике /movies?year=");
                 String yearPath = query.substring("year=".length());
-                //System.out.println("yearPath= "+ yearPath);
+
                 int year = -1;
                 try {
                     year = Integer.parseInt(yearPath);
@@ -50,7 +53,7 @@ public class MoviesHandler extends BaseHttpHandler { // Расширьте ба�
                     sendJson(ex, 400, json);
                 }
 
-                if (year >= 1888 && year <= LocalDate.now().getYear()+1) {
+                if (year >= 1888 && year <= LocalDate.now().getYear() + 1) {
                     List<String> movies = store.getMovieByYear(year);
 
                     String json = gson.toJson(movies);
@@ -62,7 +65,6 @@ public class MoviesHandler extends BaseHttpHandler { // Расширьте ба�
 
                 //Эндпоинт  GET /movies/{id}
             } else if (path.matches("/movies/.+")) {
-                System.out.println("мы в логике /movies/*");
                 String requestPath = path.substring("/movies/".length());
                 int movieId = -1;
                 try {
@@ -77,14 +79,13 @@ public class MoviesHandler extends BaseHttpHandler { // Расширьте ба�
                         String json = gson.toJson(movie);
                         sendJson(ex, 200, json);
                     } else {
-                        //sendJson(ex, 404, "Фильм не найден");
                         String json = gson.toJson("Фильм не найден");
                         sendJson(ex, 404, json);
                     }
                 }
 
             } else {
-                System.out.println("мы в логике всё остальное");
+                sendJson(ex, 404, "wrong request");
             }
 
 
@@ -93,7 +94,6 @@ public class MoviesHandler extends BaseHttpHandler { // Расширьте ба�
         else if (method.equalsIgnoreCase("POST")) {
             InputStream inputStream = ex.getRequestBody();
             String requestBody = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
-            //String jsonString = ex.getRequestBody();
             try {
                 Movie movie = gson.fromJson(requestBody, Movie.class);
                 //данные для проверки content-type
@@ -141,6 +141,8 @@ public class MoviesHandler extends BaseHttpHandler { // Расширьте ба�
             } else {
                 sendJson(ex, 404, "");
             }
+        } else {
+            sendJson(ex, 405, "");
         }
     }
 }

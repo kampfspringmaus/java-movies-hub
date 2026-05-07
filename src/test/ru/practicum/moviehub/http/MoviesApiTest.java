@@ -1,10 +1,7 @@
 package ru.practicum.moviehub.http;
 
 import com.google.gson.*;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import ru.practicum.moviehub.model.Movie;
 import ru.practicum.moviehub.store.MoviesStore;
 
@@ -21,21 +18,34 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class MoviesApiTest {
-    private static final String BASE = "http://localhost:8080"; // Исправлено: http:// → http://
+    private static final String BASE = "http://localhost:8080";
     private static MoviesServer server;
     private static HttpClient client;
 
     @BeforeAll
-    static void beforeAll() throws Exception { // Добавлено throws Exception
-        server = new MoviesServer(new MoviesStore(), 8080); // Исправлено: инициализация поля класса, а не локальной переменной
+    static void beforeAll() throws Exception {
+        server = new MoviesServer(new MoviesStore(), 8080);
         server.start();
 
         client = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(2))
                 .build();
     }
-
+/*
+Дорогой Вячеслав (надеюсь, это именно ты), прости, не знаю, как ещё написать тебе человеческие слова,
+поэтому напишу здесь. Видит бог, я очень чётко осознаю, что это не лучший код в моей жизни. Он совершенно точно
+рабочий, хотя тут прорва того, что можно оптимизировать, чем я и займусь в ближайшее время. Буду тебе благодарен
+за любые замечания. Просто заранее хотел себя обелить в части того, что понимаю, что повторяемость кода драматичная,
+и я займусь оптимизацией этого в любом случае.
+Просто обстоятельства складываются так, что кодить я в ближайшие 4 дня не смогу, а доступ к теории следующего спринта
+хотелось бы иметь. Поэтому сдаю довольно сырую, но рабочую версию.
+Отдельно буду очень благодарен, если ты пояснишь, зачем бы мне мог понадобиться ListOfMoviesTypeToken. Я не нашёл
+ему применения.
+С наступающим тебя Днём Победы и хороших выходных!
+Ура-Ура-Ура!
+*/
     @AfterAll
     static void afterAll() {
         if (server != null) { // Защита от NullPointerException
@@ -45,6 +55,7 @@ public class MoviesApiTest {
 
 
     @Test
+    @Order(1)
     void getMovies_whenEmpty_returnsEmptyArray() throws Exception {
         HttpRequest req = HttpRequest.newBuilder()
                 .uri(URI.create(BASE + "/movies"))
@@ -60,11 +71,29 @@ public class MoviesApiTest {
                 "Content-Type должен содержать формат данных и кодировку");
 
         String body = resp.body().trim();
-        assertTrue(body.startsWith("[") && body.endsWith("]"), // Исправлено: endsWith → endsWith
+        assertTrue(body.startsWith("[") && body.endsWith("]"),
                 "Ожидается JSON-массив");
     }
 
     @Test
+    @Order(4)
+    void whenGetMoviesAndStoreNotEmptyReturn200AndMovieArray() {
+        HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create(BASE + "/movies"))
+                .GET()
+                .build();
+        try {
+            HttpResponse<String> response = client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+            assertEquals(200, response.statusCode(), "GET /movies должен вернуть 200");
+            JsonArray movieArray = JsonParser.parseString(response.body()).getAsJsonArray();
+            assertEquals(2, movieArray.size(), "Количество фильмов в хранилище не совпадает с ожидаемым");
+        } catch (IOException | InterruptedException e) {
+            System.out.println("whenGetMoviesAndStoreNotEmptyReturn200AndMovieArray " + e.getMessage());
+        }
+    }
+
+    @Test
+    @Order(2)
     void whenPostMovieReturns201AndMovieIDIfOk() {
         Movie movie = new Movie("Титаник", 1997);
         Gson gson = new Gson();
@@ -78,16 +107,14 @@ public class MoviesApiTest {
             HttpResponse<String> response = client.send(req,
                     HttpResponse.BodyHandlers.ofString());
             Assertions.assertEquals(201, response.statusCode(), "При добавлении валидного фильма должны получать 201 код");
-            //Assertions.assertEquals(201,response.statusCode(),"При добавлении валидного фильма должны получать 201 код");
-            //Assertions.assert
             JsonElement jsonElement = JsonParser.parseString(response.body());
-            if (!jsonElement.isJsonObject()) { // проверяем, точно ли мы получили JSON-объект
+            if (!jsonElement.isJsonObject()) {
                 System.out.println("whenPostMovieReturns201AndMovieIDIfOk: Ответ от сервера не соответствует ожидаемому.");
                 return;
             }
             JsonObject jsonObject = jsonElement.getAsJsonObject();
             int index = jsonObject.get("index").getAsInt();
-            Assertions.assertEquals(4, index, "при добавлении фильма вернулся неправильный индекс");
+            Assertions.assertEquals(1, index, "при добавлении фильма вернулся неправильный индекс");
             JsonObject movieObject = jsonObject.getAsJsonObject("movie");
             Movie movieResponse = gson.fromJson(movieObject, Movie.class);
             Assertions.assertEquals(movie, movieResponse, "Возвращённый фильм не совпадает с опубликованным");
@@ -113,7 +140,7 @@ public class MoviesApiTest {
                     HttpResponse.BodyHandlers.ofString());
             Assertions.assertEquals(422, response.statusCode(), "При добавлении фильма без названия должна возвращаться ошибка");
             JsonElement jsonElement = JsonParser.parseString(response.body());
-            if (!jsonElement.isJsonObject()) { // проверяем, точно ли мы получили JSON-объект
+            if (!jsonElement.isJsonObject()) {
                 System.out.println("whenPostMovieWithBlankTitleReturns422AndValidationError: Ответ от сервера не соответствует ожидаемому.");
                 return;
             }
@@ -122,8 +149,6 @@ public class MoviesApiTest {
             JsonArray detailsArray = jsonObject.get("details").getAsJsonArray();
             String errorMessage = detailsArray.get(0).getAsString();
             Assertions.assertEquals("название не должно быть пустым", errorMessage, "чё-то не то");
-            // String errorDetails = jsonObject.get("shortDescription").getAsString();
-            //   System.out.println(errorDetails);
             Assertions.assertEquals("Ошибка валидации", errorDescription, "чё-то не то");
         } catch (IOException | InterruptedException e) {
             System.out.println("whenPostMovieWithBlankTitleReturns422AndValidationError " + e.getMessage());
@@ -147,7 +172,7 @@ public class MoviesApiTest {
             Assertions.assertEquals(422, response.statusCode(), "При добавлении фильма " +
                     "c названием больше 100 символов должна возвращаться ошибка");
             JsonElement jsonElement = JsonParser.parseString(response.body());
-            if (!jsonElement.isJsonObject()) { // проверяем, точно ли мы получили JSON-объект
+            if (!jsonElement.isJsonObject()) {
                 System.out.println("whenPostMovieWithLongTitleReturns422AndValidationError: Ответ от сервера не соответствует ожидаемому.");
                 return;
             }
@@ -188,7 +213,7 @@ public class MoviesApiTest {
             JsonElement jsonElementOld = JsonParser.parseString(responseOld.body());
             JsonElement jsonElementYoung = JsonParser.parseString(responseYoung.body());
 
-            if (!jsonElementOld.isJsonObject() || !jsonElementYoung.isJsonObject()) { // проверяем, точно ли мы получили JSON-объект
+            if (!jsonElementOld.isJsonObject() || !jsonElementYoung.isJsonObject()) {
                 System.out.println("whenPostMovieWithWrongYearReturns422AndValidationError: Ответ от сервера не соответствует ожидаемому.");
                 return;
             }
@@ -204,8 +229,6 @@ public class MoviesApiTest {
             String errorMessageYoung = detailsArrayYoung.get(0).getAsString();
             Assertions.assertEquals("год должен быть между 1888 и " + LocalDate.now().getYear() + 1, errorMessageOld, "чё-то не то");
             Assertions.assertEquals("год должен быть между 1888 и " + LocalDate.now().getYear() + 1, errorMessageYoung, "чё-то не то");
-            // String errorDetails = jsonObject.get("shortDescription").getAsString();
-            //   System.out.println(errorDetails);
             Assertions.assertEquals("Ошибка валидации", errorDescriptionOld, "чё-то не то");
             Assertions.assertEquals("Ошибка валидации", errorDescriptionYoung, "чё-то не то");
         } catch (IOException | InterruptedException e) {
@@ -228,7 +251,6 @@ public class MoviesApiTest {
             HttpResponse<String> response = client.send(req,
                     HttpResponse.BodyHandlers.ofString());
             Assertions.assertEquals(415, response.statusCode(), "При неправильном Content Type нужна 415 ошибка");
-            //System.out.println("response "+ response.statusCode());
         } catch (IOException | InterruptedException e) {
             System.out.println("whenPostMovieWithIncorrectContentTypeReturns415AndUnsupportedMediaType " + e.getMessage());
         }
@@ -241,14 +263,12 @@ public class MoviesApiTest {
 
         HttpRequest req = HttpRequest.newBuilder()
                 .uri(URI.create(BASE + "/movies"))
-                //.header("Content-Type", "application/xml")
                 .POST(HttpRequest.BodyPublishers.ofString(movieBody))
                 .build();
         try {
             HttpResponse<String> response = client.send(req,
                     HttpResponse.BodyHandlers.ofString());
             Assertions.assertEquals(422, response.statusCode(), "При неправильном JSON должна возвращаться 422 ошибка");
-            //System.out.println("response "+ response.statusCode());
         } catch (IOException | InterruptedException e) {
             System.out.println("whenPostMovieWithIncorrectJsonReturns422AndValidationError " + e.getMessage());
         }
@@ -256,8 +276,9 @@ public class MoviesApiTest {
 
     //Получение фильма по идентификатору
     @Test
+    @Order(3)
     void whenMoviefound200AndJsonWithMovie() {
-        Movie movie = new Movie("Бабуся", 1997);
+        Movie movie = new Movie("Барбариска", 1997);
         Gson gson = new Gson();
         String movieBody = gson.toJson(movie);
         int index = 0;
@@ -270,7 +291,7 @@ public class MoviesApiTest {
             HttpResponse<String> responsePost = client.send(reqPost,
                     HttpResponse.BodyHandlers.ofString());
             JsonElement jsonElement = JsonParser.parseString(responsePost.body());
-            if (!jsonElement.isJsonObject()) { // проверяем, точно ли мы получили JSON-объект
+            if (!jsonElement.isJsonObject()) {
                 System.out.println("whenMoviefound200AndJsonWithMovie: Ответ от сервера не соответствует ожидаемому.");
                 return;
             }
@@ -288,7 +309,6 @@ public class MoviesApiTest {
             HttpResponse<String> response = client.send(req,
                     HttpResponse.BodyHandlers.ofString());
             Assertions.assertEquals(200, response.statusCode(), "При поиске по ID существующего фильма должно возвращаться 200");
-            //System.out.println("response "+ response.statusCode());
         } catch (IOException | InterruptedException e) {
             System.out.println("whenMoviefound200AndJsonWithMovie " + e.getMessage());
         }
@@ -304,17 +324,9 @@ public class MoviesApiTest {
             HttpResponse<String> response = client.send(req,
                     HttpResponse.BodyHandlers.ofString());
             Assertions.assertEquals(404, response.statusCode(), "При запросе несуществующего фильма должна вернуться 404 ошибка");
-         /*JsonElement jsonElement = JsonParser.parseString(response.body());
-         if(!jsonElement.isJsonObject()) { // проверяем, точно ли мы получили JSON-объект
-             System.out.println("whenMovieNotFound404AndBodyWithMessage: Ответ от сервера не соответствует ожидаемому.");
-             return;
-         }*/
+
             String responseBody = JsonParser.parseString(response.body()).getAsString();
-            //System.out.println("responseBody " + responseBody );
             Assertions.assertEquals("Фильм не найден", responseBody, "При запросе несуществующего фильма должна вернуться ошибка Фильм не найден");
-
-
-            //Дописать код проверки тела ответа
         } catch (IOException | InterruptedException e) {
             System.out.println("whenMovieNotFound404AndBodyWithMessage " + e.getMessage());
         }
@@ -330,16 +342,8 @@ public class MoviesApiTest {
                     HttpResponse.BodyHandlers.ofString());
             Assertions.assertEquals(400, response.statusCode(), "При запросе по ID, не являющемуся числом" +
                     "должна вернуться 400 ошибка");
-            //JsonElement jsonElement = JsonParser.parseString(response.body());
-            /* if(!jsonElement.isJsonObject()) { // проверяем, точно ли мы получили JSON-объект
-                System.out.println("whenMovieIdIsNotNumber400AndBodyWithMessage: Ответ от сервера не соответствует ожидаемому.");
-                return;
-            }*/
             String responseBody = JsonParser.parseString(response.body()).getAsString();
             Assertions.assertEquals("Некорректный ID", responseBody, "При запросе некорректного ID должна вернуться ошибка Некорректный ID");
-
-
-            //Дописать код проверки тела ответа
         } catch (IOException | InterruptedException e) {
             System.out.println("whenMovieIdIsNotNumber400AndBodyWithMessage " + e.getMessage());
         }
@@ -356,7 +360,6 @@ public class MoviesApiTest {
             HttpResponse<String> response = client.send(req,
                     HttpResponse.BodyHandlers.ofString());
             Assertions.assertEquals(404, response.statusCode(), "При удалении несуществующего фильма должна возвращаться 404 ошибка");
-            //System.out.println("response "+ response.statusCode());
         } catch (IOException | InterruptedException e) {
             System.out.println("whenDeleteNonExistentMovieGet404 " + e.getMessage());
         }
@@ -377,7 +380,7 @@ public class MoviesApiTest {
             HttpResponse<String> responsePost = client.send(reqPost,
                     HttpResponse.BodyHandlers.ofString());
             JsonElement jsonElement = JsonParser.parseString(responsePost.body());
-            if (!jsonElement.isJsonObject()) { // проверяем, точно ли мы получили JSON-объект
+            if (!jsonElement.isJsonObject()) {
                 System.out.println("whenDeleteExistedMovieGet204: Ответ от сервера не соответствует ожидаемому.");
                 return;
             }
@@ -483,11 +486,10 @@ public class MoviesApiTest {
         try {
             HttpResponse<String> response = client.send(req,
                     HttpResponse.BodyHandlers.ofString());
-            //System.out.println("!!!!!!!!!!!!!!!!!!!!!!!!!!!! response " + response.body());
             JsonArray movieArray = JsonParser.parseString(response.body()).getAsJsonArray();
             List<String> movieTitles = gson.fromJson(movieArray, List.class);
             Assertions.assertEquals(200, response.statusCode(), "При наличии фильма в этом году возвращается код 200");
-Assertions.assertEquals("Чивапчи",movieTitles.get(1),"второй элемент массива должен быть Чивапчи");
+            Assertions.assertEquals("Чивапчи", movieTitles.get(1), "второй элемент массива должен быть Чивапчи");
 
         } catch (IOException | InterruptedException e) {
             System.out.println("whenYear2015Returns200AndOneMovie " + e.getMessage());
