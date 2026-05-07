@@ -87,11 +87,8 @@ public class MoviesHandler extends BaseHttpHandler {
             } else {
                 sendJson(ex, 404, "wrong request");
             }
-
-
-        }
-        //НАЧАЛО ПОСТА
-        else if (method.equalsIgnoreCase("POST")) {
+            //НАЧАЛО ПОСТА
+        } else if (method.equalsIgnoreCase("POST")) {
             InputStream inputStream = ex.getRequestBody();
             String requestBody = new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
             try {
