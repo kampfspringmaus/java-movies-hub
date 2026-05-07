@@ -256,6 +256,98 @@ public class MoviesApiTest {
         }
     }
 
+    //Получение фильма по идентификатору
+ @Test
+    void whenMoviefound200AndJsonWithMovie(){
+     Movie movie = new Movie("Бабуся", 1997);
+     Gson gson = new Gson();
+     String movieBody = gson.toJson(movie);
+     int index = 0;
+
+     HttpRequest reqPost = HttpRequest.newBuilder()
+             .uri(URI.create(BASE + "/movies"))
+             .POST(HttpRequest.BodyPublishers.ofString(movieBody))
+             .build();
+     try {
+         HttpResponse<String> responsePost = client.send(reqPost,
+                 HttpResponse.BodyHandlers.ofString());
+         JsonElement jsonElement = JsonParser.parseString(responsePost.body());
+         if(!jsonElement.isJsonObject()) { // проверяем, точно ли мы получили JSON-объект
+             System.out.println("Ответ от сервера не соответствует ожидаемому.");
+             return;
+         }
+         JsonObject jsonObject = jsonElement.getAsJsonObject();
+         index = jsonObject.get("index").getAsInt();
+
+     } catch (IOException | InterruptedException e) {
+         System.out.println(e.getMessage());
+     }
+     System.out.println("до сюда дошли индекс "+ index);
+             HttpRequest req = HttpRequest.newBuilder()
+             .uri(URI.create(BASE + "/movies/"+index))
+             .GET()
+             .build();
+     try {
+         HttpResponse<String> response = client.send(req,
+                 HttpResponse.BodyHandlers.ofString());
+         Assertions.assertEquals(200, response.statusCode(), "При поиске по ID существующего фильма должно возвращаться 200");
+         //System.out.println("response "+ response.statusCode());
+     } catch (IOException | InterruptedException e) {
+         System.out.println(e.getMessage());
+     }
+ }
+ @Test
+ void whenMovieNotFound404AndBodyWithMessage(){
+     HttpRequest req = HttpRequest.newBuilder()
+             .uri(URI.create(BASE + "/movies/117"))
+             .GET()
+             .build();
+     try {
+         HttpResponse<String> response = client.send(req,
+                 HttpResponse.BodyHandlers.ofString());
+         Assertions.assertEquals(404, response.statusCode(), "При запросе несуществующего фильма должна вернуться 404 ошибка");
+         System.out.println("response.body() " + response.body());
+         JsonElement jsonElement = JsonParser.parseString(response.body());
+         if(!jsonElement.isJsonObject()) { // проверяем, точно ли мы получили JSON-объект
+             System.out.println("Ответ от сервера не соответствует ожидаемому.");
+             return;
+         }
+         String responseBody = jsonElement.getAsJsonObject().getAsString();
+         System.out.println("responseBody " + responseBody );
+         Assertions.assertEquals("Фильм не найден", responseBody, "При запросе несуществующего фильма должна вернуться ошибка Фильм не найден");
+
+
+         //Дописать код проверки тела ответа
+     } catch (IOException | InterruptedException e) {
+         System.out.println(e.getMessage());
+     }
+    }
+   @Test
+    void whenMovieIdIsNotNumber400AndBodyWithMessage(){
+        HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create(BASE + "/movies/1As17"))
+                .build();
+        try {
+            HttpResponse<String> response = client.send(req,
+                    HttpResponse.BodyHandlers.ofString());
+            Assertions.assertEquals(400, response.statusCode(), "При запросе по ID, не являющемуся числом" +
+                    "должна вернуться 400 ошибка");
+            JsonElement jsonElement = JsonParser.parseString(response.body());
+            if(!jsonElement.isJsonObject()) { // проверяем, точно ли мы получили JSON-объект
+                System.out.println("Ответ от сервера не соответствует ожидаемому.");
+                return;
+            }
+            String responseBody = jsonElement.getAsJsonObject().getAsString();
+            Assertions.assertEquals("Некорректный ID", responseBody, "При запросе некорректного ID должна вернуться ошибка Некорректный ID");
+
+
+            //Дописать код проверки тела ответа
+        } catch (IOException | InterruptedException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    //Удаление фильма
     @Test
     void whenDeleteNonExistentMovieGet404(){
         HttpRequest req = HttpRequest.newBuilder()
@@ -273,7 +365,7 @@ public class MoviesApiTest {
     }
     @Test
     void whenDeleteExistedMovieGet204(){
-        Movie movie = new Movie("Бабусяasd", 1997);
+        Movie movie = new Movie("Бабуся", 1997);
         Gson gson = new Gson();
         String movieBody = gson.toJson(movie);
         int index = 0;
@@ -304,8 +396,7 @@ public class MoviesApiTest {
             HttpResponse<String> response = client.send(req,
                     HttpResponse.BodyHandlers.ofString());
             Assertions.assertEquals(204, response.statusCode(), "При удалении существующего фильма должен возвращаться код 204");
-            //System.out.println("response "+ response.statusCode());
-        } catch (IOException | InterruptedException e) {
+            } catch (IOException | InterruptedException e) {
             System.out.println(e.getMessage());
         }
     }

@@ -37,4 +37,12 @@ public class MoviesStore {
         return Optional.ofNullable(store.remove(index));
     }
 
+    public boolean containsMovie(int index) {
+        return store.containsKey(index);
+    }
+
+    public Movie getMovie(int index) {
+        return store.get(index);
+    }
+
 }
