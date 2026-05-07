@@ -46,6 +46,7 @@ public class MoviesApiTest {
 С наступающим тебя Днём Победы и хороших выходных!
 Ура-Ура-Ура!
 */
+
     @AfterAll
     static void afterAll() {
         if (server != null) { // Защита от NullPointerException
