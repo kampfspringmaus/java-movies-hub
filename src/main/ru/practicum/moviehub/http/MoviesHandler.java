@@ -12,10 +12,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 public class MoviesHandler extends BaseHttpHandler { // Расширьте базовый класс BaseHttpHandler
 
@@ -35,16 +32,38 @@ public class MoviesHandler extends BaseHttpHandler { // Расширьте ба�
 
         if (method.equalsIgnoreCase("GET")) {
             String path = ex.getRequestURI().getPath();
-            System.out.println(path);
-            if (path.equals("/movies")) {
+            String query = ex.getRequestURI().getQuery();
+            if (path.equals("/movies") && query == null) {
                 sendJson(ex, 200, "[]");
                 //дописать логику
                 System.out.println("мы в логике /movies");
-            } else if (path.matches("/movies?year=")) {
+            //Эндпоинт GET /movies?year=YYYY
+            } else if (path.equals("/movies") && query.matches("year=.*")) {
                 System.out.println("мы в логике /movies?year=");
+                String yearPath = query.substring("year=".length());
+                //System.out.println("yearPath= "+ yearPath);
+                int year = -1;
+                try {
+                    year = Integer.parseInt(yearPath);
+                } catch (NumberFormatException e) {
+                    String json = gson.toJson("Некорректный параметр запроса — 'year'");
+                    sendJson(ex, 400, json);
+                }
+
+                if (year >= 1888 && year <= LocalDate.now().getYear()+1) {
+                    List<String> movies = store.getMovieByYear(year);
+
+                    String json = gson.toJson(movies);
+                    sendJson(ex, 200, json);
+                } else {
+                    String json = gson.toJson("Некорректный параметр запроса — 'year'");
+                    sendJson(ex, 400, json);
+                }
+
+                //Эндпоинт  GET /movies/{id}
             } else if (path.matches("/movies/.+")) {
                 System.out.println("мы в логике /movies/*");
-                String requestPath = path.substring(8);
+                String requestPath = path.substring("/movies/".length());
                 int movieId = -1;
                 try {
                     movieId = Integer.parseInt(requestPath);
@@ -96,15 +115,13 @@ public class MoviesHandler extends BaseHttpHandler { // Расширьте ба�
                 if (potentialErrors.size() > 0) {
                     ErrorResponse errors = new ErrorResponse("Ошибка валидации", potentialErrors.toArray(new String[potentialErrors.size()]));
                     String json = gson.toJson(errors);
-                    System.out.println("вот чего" + json);
                     sendJson(ex, 422, json);
 
                 } else if (contentType != null && !contentType.equals("application/json")) {
-                    System.out.println("415 ошибка видна");
                     sendJson(ex, 415, "");
                 } else {
                     int index = store.addMovie(movie.getTitle(), movie.getYear());
-                    System.out.println("index тут равен= " + index);
+
                     Map<String, Object> combined = new HashMap<>();
                     combined.put("index", index);
                     combined.put("movie", movie);
@@ -118,8 +135,6 @@ public class MoviesHandler extends BaseHttpHandler { // Расширьте ба�
         } else if (method.equalsIgnoreCase("DELETE")) {
             String requestPath = ex.getRequestURI().getPath();
             int id = Integer.parseInt(requestPath.substring(requestPath.lastIndexOf('/') + 1));
-            System.out.println("просят удалить фильм " + id);
-            //System.out.println("вот такой список фильмов: \n"+store.keySet());
             Optional<Movie> movie = store.deleteMovie(id);
             if (movie.isPresent()) {
                 sendNoContent(ex);

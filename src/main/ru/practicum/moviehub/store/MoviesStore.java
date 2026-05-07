@@ -2,9 +2,8 @@ package ru.practicum.moviehub.store;
 
 import ru.practicum.moviehub.model.Movie;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public class MoviesStore {
     Map<Integer, Movie> store;
@@ -24,8 +23,6 @@ public class MoviesStore {
             store.put(index, movie);
             // int resultIndex = index;
             //System.out.println("resultIndex = " + resultIndex);
-            System.out.println("index = "+ index);
-            System.out.println("вот такой список фильмов: \n"+store.keySet());
             return index;
         }
 
@@ -33,7 +30,6 @@ public class MoviesStore {
     }
 
     public Optional<Movie> deleteMovie(int index) {
-        System.out.println("вот такой список фильмов: \n"+store.keySet());
         return Optional.ofNullable(store.remove(index));
     }
 
@@ -43,6 +39,15 @@ public class MoviesStore {
 
     public Movie getMovie(int index) {
         return store.get(index);
+    }
+
+    public List<String> getMovieByYear (int year) {
+        List<String> movies = new ArrayList<>();
+        movies = store.values().stream()
+                .filter(movie -> movie.getYear() == year)
+                .map(movie -> movie.getTitle())
+                .collect(Collectors.toList());
+        return movies;
     }
 
 }
