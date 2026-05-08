@@ -62,7 +62,7 @@ public class MoviesHandler extends BaseHttpHandler {
                 //Эндпоинт  GET /movies/{id}
             } else if (path.matches("/movies/.+")) {
                 String requestPath = path.substring("/movies/".length());
-                int movieId = - 1;
+                int movieId = -1;
                 try {
                     movieId = Integer.parseInt(requestPath);
                 } catch (NumberFormatException e) {
@@ -98,7 +98,7 @@ public class MoviesHandler extends BaseHttpHandler {
                 }
 
                 if (movie.getYear() < minYear || movie.getYear() > maxYear) {
-                    potentialErrors.add("год должен быть между "+ minYear + " и " + maxYear);
+                    potentialErrors.add("год должен быть между " + minYear + " и " + maxYear);
                 }
 
                 if (movie.getTitle().length() > 100) {
