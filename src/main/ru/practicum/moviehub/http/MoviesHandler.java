@@ -16,8 +16,9 @@ import java.util.*;
 
 public class MoviesHandler extends BaseHttpHandler {
     Gson gson;
-    private final int maxYear = LocalDate.now().getYear()+1;
+    private final int maxYear = LocalDate.now().getYear() + 1;
     private final int minYear = 1888;
+
     public MoviesHandler(MoviesStore store) {
         super(store);
         this.gson = new Gson();
