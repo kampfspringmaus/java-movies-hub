@@ -1,10 +1,12 @@
 package ru.practicum.moviehub.api;
 
-public class ErrorResponse {
-    String shortDescription;
-    String[] details;
+import java.util.ArrayList;
 
-    public ErrorResponse(String shortDescription, String[] details) {
+public class ErrorResponse {
+    private String shortDescription;
+    private ArrayList<String> details;
+
+    public ErrorResponse(String shortDescription, ArrayList<String> details) {
         this.shortDescription = shortDescription;
         this.details = details;
     }

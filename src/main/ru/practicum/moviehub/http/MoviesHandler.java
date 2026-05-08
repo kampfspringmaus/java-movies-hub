@@ -15,19 +15,18 @@ import java.time.LocalDate;
 import java.util.*;
 
 public class MoviesHandler extends BaseHttpHandler {
-
-
+    Gson gson;
+    private final int maxYear = LocalDate.now().getYear()+1;
+    private final int minYear = 1888;
     public MoviesHandler(MoviesStore store) {
         super(store);
-
-
+        this.gson = new Gson();
     }
 
     @Override
     public void handle(HttpExchange ex) throws IOException {
         String method = ex.getRequestMethod();
         ArrayList<String> potentialErrors = new ArrayList<>();
-        Gson gson = new Gson();
 
 
         if (method.equalsIgnoreCase("GET")) {
@@ -35,12 +34,8 @@ public class MoviesHandler extends BaseHttpHandler {
             String query = ex.getRequestURI().getQuery();
             if (path.equals("/movies") && query == null) {
                 List<Movie> result = store.getAllMovies();
-                if (result.size() == 0) {
-                    sendJson(ex, 200, "[]");
-                } else {
                     String json = gson.toJson(result);
                     sendJson(ex, 200, json);
-                }
                 //Эндпоинт GET /movies?year=YYYY
             } else if (path.equals("/movies") && query.matches("year=.*")) {
                 String yearPath = query.substring("year=".length());
@@ -53,7 +48,7 @@ public class MoviesHandler extends BaseHttpHandler {
                     sendJson(ex, 400, json);
                 }
 
-                if (year >= 1888 && year <= LocalDate.now().getYear() + 1) {
+                if (year >= minYear && year <= maxYear) {
                     List<String> movies = store.getMovieByYear(year);
 
                     String json = gson.toJson(movies);
@@ -101,8 +96,8 @@ public class MoviesHandler extends BaseHttpHandler {
                     potentialErrors.add("название не должно быть пустым");
                 }
 
-                if (movie.getYear() < 1888 || movie.getYear() > LocalDate.now().getYear() + 1) {
-                    potentialErrors.add("год должен быть между 1888 и " + LocalDate.now().getYear() + 1);
+                if (movie.getYear() < minYear || movie.getYear() > maxYear) {
+                    potentialErrors.add("год должен быть между "+ minYear + " и " + maxYear);
                 }
 
                 if (movie.getTitle().length() > 100) {
@@ -110,12 +105,12 @@ public class MoviesHandler extends BaseHttpHandler {
                 }
 
                 if (potentialErrors.size() > 0) {
-                    ErrorResponse errors = new ErrorResponse("Ошибка валидации", potentialErrors.toArray(new String[potentialErrors.size()]));
+                    ErrorResponse errors = new ErrorResponse("Ошибка валидации", potentialErrors);
                     String json = gson.toJson(errors);
                     sendJson(ex, 422, json);
 
                 } else if (contentType != null && !contentType.equals("application/json")) {
-                    sendJson(ex, 415, "");
+                    sendJson(ex, 415, "Unsupported Media Type");
                 } else {
                     int index = store.addMovie(movie.getTitle(), movie.getYear());
 
@@ -126,8 +121,7 @@ public class MoviesHandler extends BaseHttpHandler {
                     sendJson(ex, 201, json);
                 }
             } catch (JsonParseException e) {
-                sendJson(ex, 422, "");
-
+                sendJson(ex, 422, "Unprocessable Entity");
             }
         } else if (method.equalsIgnoreCase("DELETE")) {
             String requestPath = ex.getRequestURI().getPath();
@@ -136,10 +130,10 @@ public class MoviesHandler extends BaseHttpHandler {
             if (movie.isPresent()) {
                 sendNoContent(ex);
             } else {
-                sendJson(ex, 404, "");
+                sendJson(ex, 404, "Not Found");
             }
         } else {
-            sendJson(ex, 405, "");
+            sendJson(ex, 405, "Method Not Allowed");
         }
     }
 }

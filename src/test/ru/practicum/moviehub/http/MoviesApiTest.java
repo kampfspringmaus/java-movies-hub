@@ -228,8 +228,8 @@ public class MoviesApiTest {
             JsonArray detailsArrayYoung = jsonObjectYoung.get("details").getAsJsonArray();
             String errorMessageOld = detailsArrayOld.get(0).getAsString();
             String errorMessageYoung = detailsArrayYoung.get(0).getAsString();
-            Assertions.assertEquals("год должен быть между 1888 и " + LocalDate.now().getYear() + 1, errorMessageOld, "чё-то не то");
-            Assertions.assertEquals("год должен быть между 1888 и " + LocalDate.now().getYear() + 1, errorMessageYoung, "чё-то не то");
+            Assertions.assertEquals("год должен быть между 1888 и " + (LocalDate.now().getYear() + 1), errorMessageOld, "Неверный текст сообщения при слишком маленьком годе выпуска фильма");
+            Assertions.assertEquals("год должен быть между 1888 и " + (LocalDate.now().getYear() + 1), errorMessageYoung, "Неверный текст сообщения при слишком большом годе выпуска фильма");
             Assertions.assertEquals("Ошибка валидации", errorDescriptionOld, "чё-то не то");
             Assertions.assertEquals("Ошибка валидации", errorDescriptionYoung, "чё-то не то");
         } catch (IOException | InterruptedException e) {
@@ -460,7 +460,6 @@ public class MoviesApiTest {
         String movieBody1 = gson.toJson(movie1);
         String movieBody2 = gson.toJson(movie2);
 
-
         HttpRequest reqPost1 = HttpRequest.newBuilder()
                 .uri(URI.create(BASE + "/movies"))
                 .POST(HttpRequest.BodyPublishers.ofString(movieBody1))
@@ -474,8 +473,6 @@ public class MoviesApiTest {
                     HttpResponse.BodyHandlers.ofString());
             HttpResponse<String> responsePost2 = client.send(reqPost2,
                     HttpResponse.BodyHandlers.ofString());
-
-
         } catch (IOException | InterruptedException e) {
             System.out.println("whenYear2015Returns200AndOneMovie" + e.getMessage());
         }
@@ -491,17 +488,8 @@ public class MoviesApiTest {
             List<String> movieTitles = gson.fromJson(movieArray, List.class);
             Assertions.assertEquals(200, response.statusCode(), "При наличии фильма в этом году возвращается код 200");
             Assertions.assertEquals("Чивапчи", movieTitles.get(1), "второй элемент массива должен быть Чивапчи");
-
         } catch (IOException | InterruptedException e) {
             System.out.println("whenYear2015Returns200AndOneMovie " + e.getMessage());
         }
     }
-    /*
-    void whenPostMovieReturns422AndErrorDetailsIfValidationError() {
-        HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(BASE + "/movies"))
-                .POST()
-                .build();
-
-    }*/
 }

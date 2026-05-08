@@ -6,8 +6,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class MoviesStore {
-    Map<Integer, Movie> store;
-    int index;
+    private Map<Integer, Movie> store;
+    private int index;
 
     public MoviesStore() {
         this.store = new HashMap<>();
