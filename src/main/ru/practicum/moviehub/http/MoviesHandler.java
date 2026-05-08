@@ -62,7 +62,7 @@ public class MoviesHandler extends BaseHttpHandler {
                 //Эндпоинт  GET /movies/{id}
             } else if (path.matches("/movies/.+")) {
                 String requestPath = path.substring("/movies/".length());
-                int movieId = -1;
+                int movieId = - 1;
                 try {
                     movieId = Integer.parseInt(requestPath);
                 } catch (NumberFormatException e) {
